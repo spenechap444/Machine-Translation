@@ -42,7 +42,7 @@ def train_TF_Autoencoder(model_type):
                     validation_split=0.2)
     elif model_type == 'RNN':
         # hyperparameters
-        latent_dim = 10
+        latent_dim = 50
         batch_size = 64
         epochs = 50
 
