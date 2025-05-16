@@ -1,6 +1,8 @@
 import Preprocessing as pre
 import TF_LSTM_AutoE, TF_RNN_AutoE
 import os
+from tensorflow.keras.callbacks import CSVLogger
+import datetime
 
 def print_hi(name):
     # Use a breakpoint in the code line below to debug your script.
@@ -20,6 +22,11 @@ def train_TF_Autoencoder(model_type):
     preprocesser.pad_sequences(data)
     encoder_input_data, decoder_input_data, decoder_target_data = preprocesser.one_hot_encode()
 
+    # creating a csv logger for training results
+    log_name = f'{model_type}_training_log_{str(datetime.datetime.now()).split(" ")[0]}'
+    csv_logger = CSVLogger(os.path.join(os.path.dirname(__file__), 'train_results', f'{log_name}.csv'),
+                           separator=',',
+                           append=False)
 
     if model_type == 'LSTM':
         # hyperparameters
@@ -36,7 +43,7 @@ def train_TF_Autoencoder(model_type):
 
         seq2seq.compile(optimizer="rmsprop", loss="categorical_crossentropy")
 
-        seq2seq.fit([encoder_input_data, decoder_input_data], decoder_target_data,
+        history = seq2seq.fit([encoder_input_data, decoder_input_data], decoder_target_data,
                     batch_size = batch_size,
                     epochs=epochs,
                     validation_split=0.2)
@@ -55,11 +62,12 @@ def train_TF_Autoencoder(model_type):
 
         seq2seq.compile(optimizer="rmsprop", loss="categorical_crossentropy")
 
-        seq2seq.fit([encoder_input_data, decoder_input_data],
+        history = seq2seq.fit([encoder_input_data, decoder_input_data],
                     decoder_target_data,
                     batch_size=batch_size,
                     epochs=epochs,
-                    validation_split=0.2)
+                    validation_split=0.2,
+                    callbacks=[csv_logger])
 
 if __name__ == '__main__':
     # print(os.path.join(os.path.dirname(__file__), 'cmn-eng', 'cmn.txt'))
