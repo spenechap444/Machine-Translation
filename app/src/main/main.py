@@ -1,5 +1,5 @@
 import Preprocessing as pre
-import TF_LSTM_AutoE, TF_RNN_AutoE
+import TF_LSTM_AutoE, TF_RNN_AutoE, TF_TeacherForcing
 import os
 from tensorflow.keras.callbacks import CSVLogger
 import datetime
@@ -28,11 +28,13 @@ def train_TF_Autoencoder(model_type):
                            separator=',',
                            append=False)
 
+
+
     if model_type == 'LSTM':
         # hyperparameters
-        latent_dim = 25
+        latent_dim = 100
         batch_size = 64
-        epochs = 100
+        epochs = 50
 
        # num_encoder_tokens = len(preprocesser.input_characters)
         num_decoder_tokens = len(preprocesser.target_characters) # required for dense layer dim
@@ -49,7 +51,7 @@ def train_TF_Autoencoder(model_type):
                     validation_split=0.2)
     elif model_type == 'RNN':
         # hyperparameters
-        latent_dim = 50
+        latent_dim = 256
         batch_size = 64
         epochs = 50
 
@@ -60,6 +62,10 @@ def train_TF_Autoencoder(model_type):
                                           num_decoder_tokens=num_decoder_tokens)
         seq2seq = TF_RNN_AutoE.Seq2SeqRNN(encoder, decoder)
 
+        annealer = TF_TeacherForcing.AnnealTeacherForcing(seq2seq,
+                                                          final_ratio=0.0,
+                                                          epochs=50)
+
         seq2seq.compile(optimizer="rmsprop", loss="categorical_crossentropy")
 
         history = seq2seq.fit([encoder_input_data, decoder_input_data],
@@ -67,9 +73,9 @@ def train_TF_Autoencoder(model_type):
                     batch_size=batch_size,
                     epochs=epochs,
                     validation_split=0.2,
-                    callbacks=[csv_logger])
+                    callbacks=[annealer, csv_logger])
 
 if __name__ == '__main__':
     # print(os.path.join(os.path.dirname(__file__), 'cmn-eng', 'cmn.txt'))
     # print_hi('PyCharm')
-    train_TF_Autoencoder('RNN')
+    train_TF_Autoencoder('LSTM')
