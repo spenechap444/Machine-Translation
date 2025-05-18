@@ -6,6 +6,8 @@ class Encoder(Model):
         super(Encoder, self).__init__()
         # LSTM returning its hidden states and cell states
         self.lstm = LSTM(enc_units,
+                         activation='tanh', # canidate cell state & output gate
+                         recurrent_activation='sigmoid', # input/forget/output gate
                         return_state=True,
                         name='encoder_lstm')
 

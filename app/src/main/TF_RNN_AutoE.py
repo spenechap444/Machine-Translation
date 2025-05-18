@@ -6,6 +6,7 @@ class EncoderRNN(Model):
     def __init__(self, enc_units):
         super(EncoderRNN, self).__init__()
         self.rnn = SimpleRNN(enc_units,
+                             activation='tanh',
                              return_state=True,
                              name="encoder_rnn")
 
