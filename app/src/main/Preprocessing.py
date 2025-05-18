@@ -21,10 +21,15 @@ class Preprocess:
     def pad_sequences(self, data):
         # checking max seq length in dataset against input param
         self.num_sequences = min(self.num_sequences, len(data)-1)
+        counter = 0
         for line in data[:self.num_sequences]:
+            counter += 1
             input_text, target_text, _ = line.split('\t') # _ is metadata
+
             # padding target sequences with start and end seq char
             target_text = '\t' + target_text + '\n'
+            if counter%50 == 0:
+                print(input_text, target_text)
             self.input_texts.append(input_text)
             self.target_texts.append(target_text)
             self._add_vocab_index(input_text, target_text)
