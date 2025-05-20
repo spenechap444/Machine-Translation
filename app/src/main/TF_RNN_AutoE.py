@@ -1,5 +1,6 @@
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import SimpleRNN, Dense
+from tensorflow.keras import regularizers
 import tensorflow as tf
 
 class EncoderRNN(Model):
@@ -8,6 +9,7 @@ class EncoderRNN(Model):
         self.rnn = SimpleRNN(enc_units,
                              activation='tanh',
                              return_state=True,
+                             kernel_regularizer=regularizers.l2(1e-4),
                              name="encoder_rnn")
 
     def call(self, x, training=False):
@@ -22,6 +24,7 @@ class DecoderRNN(Model):
         self.rnn = SimpleRNN(dec_units,
                              return_sequences=True,
                              return_state=True,
+                             kernel_regularizer=regularizers.l2(1e-4),
                              name = "decoder_rnn")
         self.dense = Dense(num_decoder_tokens,
                            activation='softmax',
