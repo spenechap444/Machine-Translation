@@ -21,6 +21,7 @@ class Preprocess:
     def pad_sequences(self, data):
         # checking max seq length in dataset against input param
         self.num_sequences = min(self.num_sequences, len(data)-1)
+        print(self.num_sequences)
         counter = 0
         for line in data[:self.num_sequences]:
             counter += 1

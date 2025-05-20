@@ -22,19 +22,21 @@ def train_TF_Autoencoder(model_type):
     preprocesser.pad_sequences(data)
     encoder_input_data, decoder_input_data, decoder_target_data = preprocesser.one_hot_encode()
 
-    # creating a csv logger for training results
-    log_name = f'{model_type}_training_log_{str(datetime.datetime.now()).split(" ")[0]}'
-    csv_logger = CSVLogger(os.path.join(os.path.dirname(__file__), 'train_results', f'{log_name}.csv'),
-                           separator=',',
-                           append=False)
-
 
 
     if model_type == 'LSTM':
+        print('Initiating LSTM model...')
         # hyperparameters
         latent_dim = 100
         batch_size = 64
         epochs = 50
+
+        log_name = f'{model_type}_{str(datetime.datetime.now()).split(" ")[0]}_dim_{latent_dim}'
+
+        # creating a csv logger for training results
+        csv_logger = CSVLogger(os.path.join(os.path.dirname(__file__), 'train_results', f'{log_name}.csv'),
+                               separator=',',
+                               append=False)
 
        # num_encoder_tokens = len(preprocesser.input_characters)
         num_decoder_tokens = len(preprocesser.target_characters) # required for dense layer dim
@@ -48,12 +50,20 @@ def train_TF_Autoencoder(model_type):
         history = seq2seq.fit([encoder_input_data, decoder_input_data], decoder_target_data,
                     batch_size = batch_size,
                     epochs=epochs,
-                    validation_split=0.2)
+                    validation_split=0.2,
+                    callbacks=[csv_logger])
     elif model_type == 'RNN':
+        print('Initiating RNN model...')
         # hyperparameters
         latent_dim = 256
         batch_size = 64
         epochs = 50
+
+        # creating a csv logger for training results
+        log_name = f'{model_type}_{str(datetime.datetime.now())}_dim_{latent_dim}'
+        csv_logger = CSVLogger(os.path.join(os.path.dirname(__file__), 'train_results', f'{log_name}.csv'),
+                               separator=',',
+                               append=False)
 
         num_decoder_tokens = len(preprocesser.target_characters)
 
@@ -78,4 +88,4 @@ def train_TF_Autoencoder(model_type):
 if __name__ == '__main__':
     # print(os.path.join(os.path.dirname(__file__), 'cmn-eng', 'cmn.txt'))
     # print_hi('PyCharm')
-    train_TF_Autoencoder('LSTM')
+    train_TF_Autoencoder('RNN')
