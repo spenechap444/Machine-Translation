@@ -10,6 +10,7 @@ class EncoderRNN(Model):
                              activation='tanh',
                              return_state=True,
                              kernel_regularizer=regularizers.l2(1e-4),
+                             activity_regularizer=regularizers.l1(1e-6),
                              name="encoder_rnn")
 
     def call(self, x, training=False):
