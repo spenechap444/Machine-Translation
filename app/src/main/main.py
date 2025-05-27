@@ -4,21 +4,14 @@ import os
 from tensorflow.keras.callbacks import CSVLogger
 import datetime
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press ⌘F8 to toggle the breakpoint.
-
-
-# Press the green button in the gutter to run the script.
-
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
 def train_TF_Autoencoder(model_type):
 
-    with open(os.path.join(os.path.dirname(os.path.dirname(__file__)) ,'cmn-eng', 'cmn.txt')) as f:
+    with open(os.path.join(os.path.dirname(os.path.dirname(__file__)) ,'data/cmn-eng', 'cmn.txt')) as f:
         data = f.read().split('\n')
 
-    preprocesser = pre.Preprocess(num_sequences=10000)
+    preprocesser = pre.Preprocess(num_sequences=100000)
     preprocesser.pad_sequences(data)
     encoder_input_data, decoder_input_data, decoder_target_data = preprocesser.one_hot_encode()
 
@@ -55,7 +48,7 @@ def train_TF_Autoencoder(model_type):
     elif model_type == 'RNN':
         print('Initiating RNN model...')
         # hyperparameters
-        latent_dim = 256
+        latent_dim = 100
         batch_size = 64
         epochs = 50
 
@@ -89,3 +82,10 @@ if __name__ == '__main__':
     # print(os.path.join(os.path.dirname(__file__), 'cmn-eng', 'cmn.txt'))
     # print_hi('PyCharm')
     train_TF_Autoencoder('RNN')
+
+#########
+# TO DO
+# - Create a hyperparameter tuning framework
+# - Get a larger training dataset ~ currently only using 10,000 records for training
+# - Determine whether the autoencoder is undercomplete vs overcomplete, decide what to do
+#########

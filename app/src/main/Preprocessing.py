@@ -21,7 +21,7 @@ class Preprocess:
     def pad_sequences(self, data):
         # checking max seq length in dataset against input param
         self.num_sequences = min(self.num_sequences, len(data)-1)
-        print(self.num_sequences)
+        print('Num Sequences: ', self.num_sequences)
         counter = 0
         for line in data[:self.num_sequences]:
             counter += 1
@@ -29,8 +29,8 @@ class Preprocess:
 
             # padding target sequences with start and end seq char
             target_text = '\t' + target_text + '\n'
-            if counter%50 == 0:
-                print(input_text, target_text)
+            # if counter%50 == 0:
+            #     print(input_text, target_text)
             self.input_texts.append(input_text)
             self.target_texts.append(target_text)
             self._add_vocab_index(input_text, target_text)
@@ -51,6 +51,9 @@ class Preprocess:
         max_encoder_seq_length = max([len(txt) for txt in self.input_texts])
         max_decoder_seq_length = max([len(txt) for txt in self.target_texts])
 
+        print(f'Max encoder seq length: {max_encoder_seq_length}')
+        print(f'Max decoder seq length: {max_decoder_seq_length}')
+
         # vector shape as (# of sentence pairs, max # seq len, # seq chars)
         encoder_input_data = np.zeros(
             (len(self.input_texts), max_encoder_seq_length, num_encoder_tokens),
@@ -64,6 +67,10 @@ class Preprocess:
             (len(self.input_texts), max_decoder_seq_length, num_decoder_tokens),
             dtype='float32'
         )
+
+        print(f'Encoder input shape: {encoder_input_data.shape}')
+        print(f'Decoder input shape: {decoder_input_data.shape}')
+        print(f'Decoder target shape: {decoder_target_data.shape}')
 
         for i, (input_text, target_text) in enumerate(zip(self.input_texts, self.target_texts)):
             for t, char in enumerate(input_text):
