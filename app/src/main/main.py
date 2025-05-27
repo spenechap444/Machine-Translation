@@ -48,20 +48,21 @@ def train_TF_Autoencoder(model_type):
     elif model_type == 'RNN':
         print('Initiating RNN model...')
         # hyperparameters
-        latent_dim = 100
+        enc_latent_dim = 150
+        dec_latent_dim = 150
         batch_size = 64
         epochs = 50
 
         # creating a csv logger for training results
-        log_name = f'{model_type}_{str(datetime.datetime.now())}_dim_{latent_dim}'
+        log_name = f'{model_type}_{str(datetime.datetime.now())}_encdim_{enc_latent_dim}_decdim_{dec_latent_dim}'
         csv_logger = CSVLogger(os.path.join(os.path.dirname(__file__), 'train_results', f'{log_name}.csv'),
                                separator=',',
                                append=False)
 
         num_decoder_tokens = len(preprocesser.target_characters)
 
-        encoder = TF_RNN_AutoE.EncoderRNN(enc_units=latent_dim)
-        decoder = TF_RNN_AutoE.DecoderRNN(dec_units=latent_dim,
+        encoder = TF_RNN_AutoE.EncoderRNN(enc_units=enc_latent_dim)
+        decoder = TF_RNN_AutoE.DecoderRNN(dec_units=dec_latent_dim,
                                           num_decoder_tokens=num_decoder_tokens)
         seq2seq = TF_RNN_AutoE.Seq2SeqRNN(encoder, decoder)
 

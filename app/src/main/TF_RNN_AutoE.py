@@ -6,37 +6,57 @@ import tensorflow as tf
 class EncoderRNN(Model):
     def __init__(self, enc_units):
         super(EncoderRNN, self).__init__()
-        self.rnn = SimpleRNN(enc_units,
+        self.rnn_l1 = SimpleRNN(enc_units,
                              activation='tanh',
+                             return_sequences=True,
                              return_state=True,
                              kernel_regularizer=regularizers.l2(1e-4),
                              activity_regularizer=regularizers.l1(1e-6),
-                             name="encoder_rnn")
-
+                             name="encoder_rnn_layer1")
+        self.rnn_l2 = SimpleRNN(enc_units,
+                                activation='tanh',
+                                return_state=True,
+                                kernel_regularizer=regularizers.l2(1e-4),
+                                activity_regularizer=regularizers.l1(1e-6),
+                                name="encoder_rnn_layer2")
     def call(self, x, training=False):
         # x shape: (batch_size, timesteps, num_encoder_tokens)
-        _, state_h = self.rnn(x, training=training)
+        _, state_h = self.rnn_l1(x, training=training)
+        # _, state_h = self.rnn_l2(seq_output_l1, training=training)
         # returning the final hidden state to pass to the decoder
         return state_h
 
 class DecoderRNN(Model):
     def __init__(self, dec_units, num_decoder_tokens):
         super(DecoderRNN, self).__init__()
-        self.rnn = SimpleRNN(dec_units,
+        self.rnn_l1 = SimpleRNN(dec_units,
                              return_sequences=True,
                              return_state=True,
                              kernel_regularizer=regularizers.l2(1e-4),
-                             name = "decoder_rnn")
+                             name = "decoder_rnn_l1")
+        self.rnn_l2 = SimpleRNN(dec_units,
+                                return_sequences=True,
+                                return_state=True,
+                                kernel_regularizer=regularizers.l2(1e-4),
+                                name = "decoder_rnn_l2")
+        self.rnn_l3 = SimpleRNN(dec_units,
+                                return_sequences=True,
+                                return_state=True,
+                                kernel_regularizer=regularizers.l2(1e-4),
+                                name = "decoder_rnn_l3")
         self.dense = Dense(num_decoder_tokens,
                            activation='softmax',
                            name='decoder_dense')
 
     def call(self, x, state, training=False):
         # x shape: (batch_size, timesteps, num_decoder_tokens)
-        seq_output, state_h = self.rnn(x,
+        seq_output_l1, state_h = self.rnn_l1(x,
                                        initial_state=state,
                                        training=training)
-        output = self.dense(seq_output)
+        # seq_output_l2, state_h = self.rnn_l2(seq_output_l1,
+        #                                  initial_state=state,
+        #                                training=training)
+        output = self.dense(seq_output_l1)
         # returning the sequence predictions and new state
         return output, state_h
 
