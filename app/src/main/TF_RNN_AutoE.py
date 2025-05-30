@@ -3,9 +3,27 @@ from tensorflow.keras.layers import SimpleRNN, Dense
 from tensorflow.keras import regularizers
 import tensorflow as tf
 
+
 class EncoderRNN(Model):
     def __init__(self, enc_units):
         super(EncoderRNN, self).__init__()
+        self.rnn = SimpleRNN(enc_units,
+                             activation='tanh',
+                             return_sequences=True,
+                             return_state=True,
+                             kernel_regularizer=regularizers.l2(1e-4),
+                             activity_regularizer=regularizers.l1(1e-6),
+                             name='encoder_rnn')
+    def call(self, x, training=False):
+        _, state_h = self.rnn(x,
+                              training=training)
+
+        return state_h
+
+
+class EncoderRNN_multilayer(Model):
+    def __init__(self, enc_units):
+        super(EncoderRNN_multilayer, self).__init__()
         self.rnn_l1 = SimpleRNN(enc_units,
                              activation='tanh',
                              return_sequences=True,
@@ -29,6 +47,24 @@ class EncoderRNN(Model):
 class DecoderRNN(Model):
     def __init__(self, dec_units, num_decoder_tokens):
         super(DecoderRNN, self).__init__()
+        self.rnn = SimpleRNN(dec_units,
+                             return_sequences=True,
+                             return_state=True,
+                             kernel_regularizer=regularizers.l2(1e-4),
+                             name='decoder_rnn')
+        self.dense = Dense(num_decoder_tokens,
+                           activation='softmax',
+                           name='decoder_dense')
+    def call(self, x, state, training=False):
+        seq_output, state_h = self.rnn(x,
+                              initial_state=state,
+                              training=training)
+        output = self.dense(seq_output)
+
+        return output, state_h
+class DecoderRNN_multilayer(Model):
+    def __init__(self, dec_units, num_decoder_tokens):
+        super(DecoderRNN_multilayer, self).__init__()
         self.rnn_l1 = SimpleRNN(dec_units,
                              return_sequences=True,
                              return_state=True,
