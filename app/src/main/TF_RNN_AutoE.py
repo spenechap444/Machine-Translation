@@ -61,8 +61,26 @@ class DecoderRNN(Model):
         return output, state_h
 
 class Seq2SeqRNN(Model):
-    def __init__(self, encoder: EncoderRNN, decoder: DecoderRNN, teacher_forcing_ratio=1.0):
+    def __init__(self, encoder: EncoderRNN, decoder: DecoderRNN):
         super(Seq2SeqRNN, self).__init__()
+        self.encoder = encoder
+        self.decoder = decoder
+
+    def call(self, inputs, training=False):
+        enc_input, dec_input = inputs
+        # Encoding the input sequence to get input for decoder
+        enc_state = self.encoder(enc_input,
+                                 training=training)
+        # Decoder returning predicted target sequences
+        dec_output, _ = self.decoder(dec_input,
+                                     enc_state,
+                                     training=training)
+
+        return dec_output
+
+class Seq2SeqRNN_manual(Model):
+    def __init__(self, encoder: EncoderRNN, decoder: DecoderRNN, teacher_forcing_ratio=1.0):
+        super(Seq2SeqRNN_manual, self).__init__()
         self.encoder = encoder
         self.decoder = decoder
         self.teacher_forcing_ratio = teacher_forcing_ratio
