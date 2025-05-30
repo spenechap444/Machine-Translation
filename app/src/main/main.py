@@ -2,6 +2,7 @@ import Preprocessing as pre
 import TF_LSTM_AutoE, TF_RNN_AutoE, TF_TeacherForcing
 import os
 from tensorflow.keras.callbacks import CSVLogger
+from tensorflow.keras.optimizers import schedules, Adam
 import datetime
 
 
@@ -48,40 +49,60 @@ def train_TF_Autoencoder(model_type):
     elif model_type == 'RNN':
         print('Initiating RNN model...')
         # hyperparameters
-        latent_dim = 100
+        enc_latent_dim = 100
+        dec_latent_dim = 100
         batch_size = 64
         epochs = 50
 
         # creating a csv logger for training results
-        log_name = f'{model_type}_{str(datetime.datetime.now())}_dim_{latent_dim}'
+        log_name = f'{model_type}_{str(datetime.datetime.now())}_encdim_{enc_latent_dim}_decdim_{dec_latent_dim}'
         csv_logger = CSVLogger(os.path.join(os.path.dirname(__file__), 'train_results', f'{log_name}.csv'),
                                separator=',',
                                append=False)
 
         num_decoder_tokens = len(preprocesser.target_characters)
 
-        encoder = TF_RNN_AutoE.EncoderRNN(enc_units=latent_dim)
-        decoder = TF_RNN_AutoE.DecoderRNN(dec_units=latent_dim,
+        encoder = TF_RNN_AutoE.EncoderRNN(enc_units=enc_latent_dim)
+        decoder = TF_RNN_AutoE.DecoderRNN(dec_units=dec_latent_dim,
                                           num_decoder_tokens=num_decoder_tokens)
         seq2seq = TF_RNN_AutoE.Seq2SeqRNN(encoder, decoder)
 
         annealer = TF_TeacherForcing.AnnealTeacherForcing(seq2seq,
                                                           final_ratio=0.0,
                                                           epochs=50)
+        # learning rate decay
+        lr_schedule = schedules.ExponentialDecay(
+            initial_learning_rate=1e-3,
+            decay_steps=500,
+            decay_rate = 0.96,
+            staircase=True
+        )
 
-        seq2seq.compile(optimizer="rmsprop", loss="categorical_crossentropy")
+        # Adam optimizer
+        optimizer = Adam(learning_rate=lr_schedule)
 
+        # seq2seq.compile(optimizer="rmsprop", loss="categorical_crossentropy")
+        seq2seq.compile(optimizer=optimizer,
+                        loss="categorical_crossentropy")
+
+
+        # history = seq2seq.fit([encoder_input_data, decoder_input_data],
+        #             decoder_target_data,
+        #             batch_size=batch_size,
+        #             epochs=epochs,
+        #             validation_split=0.2,
+        #             callbacks=[annealer, csv_logger])
         history = seq2seq.fit([encoder_input_data, decoder_input_data],
                     decoder_target_data,
                     batch_size=batch_size,
                     epochs=epochs,
                     validation_split=0.2,
-                    callbacks=[annealer, csv_logger])
+                    callbacks=[csv_logger])
 
 if __name__ == '__main__':
     # print(os.path.join(os.path.dirname(__file__), 'cmn-eng', 'cmn.txt'))
     # print_hi('PyCharm')
-    train_TF_Autoencoder('RNN')
+    train_TF_Autoencoder('LSTM')
 
 #########
 # TO DO

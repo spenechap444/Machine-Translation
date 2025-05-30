@@ -3,19 +3,44 @@ from tensorflow.keras.layers import SimpleRNN, Dense
 from tensorflow.keras import regularizers
 import tensorflow as tf
 
+
 class EncoderRNN(Model):
     def __init__(self, enc_units):
         super(EncoderRNN, self).__init__()
         self.rnn = SimpleRNN(enc_units,
                              activation='tanh',
+                             return_sequences=True,
                              return_state=True,
                              kernel_regularizer=regularizers.l2(1e-4),
                              activity_regularizer=regularizers.l1(1e-6),
-                             name="encoder_rnn")
+                             name='encoder_rnn')
+    def call(self, x, training=False):
+        _, state_h = self.rnn(x,
+                              training=training)
 
+        return state_h
+
+
+class EncoderRNN_multilayer(Model):
+    def __init__(self, enc_units):
+        super(EncoderRNN_multilayer, self).__init__()
+        self.rnn_l1 = SimpleRNN(enc_units,
+                             activation='tanh',
+                             return_sequences=True,
+                             return_state=True,
+                             kernel_regularizer=regularizers.l2(1e-4),
+                             activity_regularizer=regularizers.l1(1e-6),
+                             name="encoder_rnn_layer1")
+        self.rnn_l2 = SimpleRNN(enc_units,
+                                activation='tanh',
+                                return_state=True,
+                                kernel_regularizer=regularizers.l2(1e-4),
+                                activity_regularizer=regularizers.l1(1e-6),
+                                name="encoder_rnn_layer2")
     def call(self, x, training=False):
         # x shape: (batch_size, timesteps, num_encoder_tokens)
-        _, state_h = self.rnn(x, training=training)
+        _, state_h = self.rnn_l1(x, training=training)
+        # _, state_h = self.rnn_l2(seq_output_l1, training=training)
         # returning the final hidden state to pass to the decoder
         return state_h
 
@@ -26,23 +51,72 @@ class DecoderRNN(Model):
                              return_sequences=True,
                              return_state=True,
                              kernel_regularizer=regularizers.l2(1e-4),
-                             name = "decoder_rnn")
+                             name='decoder_rnn')
+        self.dense = Dense(num_decoder_tokens,
+                           activation='softmax',
+                           name='decoder_dense')
+    def call(self, x, state, training=False):
+        seq_output, state_h = self.rnn(x,
+                              initial_state=state,
+                              training=training)
+        output = self.dense(seq_output)
+
+        return output, state_h
+class DecoderRNN_multilayer(Model):
+    def __init__(self, dec_units, num_decoder_tokens):
+        super(DecoderRNN_multilayer, self).__init__()
+        self.rnn_l1 = SimpleRNN(dec_units,
+                             return_sequences=True,
+                             return_state=True,
+                             kernel_regularizer=regularizers.l2(1e-4),
+                             name = "decoder_rnn_l1")
+        self.rnn_l2 = SimpleRNN(dec_units,
+                                return_sequences=True,
+                                return_state=True,
+                                kernel_regularizer=regularizers.l2(1e-4),
+                                name = "decoder_rnn_l2")
+        self.rnn_l3 = SimpleRNN(dec_units,
+                                return_sequences=True,
+                                return_state=True,
+                                kernel_regularizer=regularizers.l2(1e-4),
+                                name = "decoder_rnn_l3")
         self.dense = Dense(num_decoder_tokens,
                            activation='softmax',
                            name='decoder_dense')
 
     def call(self, x, state, training=False):
         # x shape: (batch_size, timesteps, num_decoder_tokens)
-        seq_output, state_h = self.rnn(x,
+        seq_output_l1, state_h = self.rnn_l1(x,
                                        initial_state=state,
                                        training=training)
-        output = self.dense(seq_output)
+        # seq_output_l2, state_h = self.rnn_l2(seq_output_l1,
+        #                                  initial_state=state,
+        #                                training=training)
+        output = self.dense(seq_output_l1)
         # returning the sequence predictions and new state
         return output, state_h
 
 class Seq2SeqRNN(Model):
-    def __init__(self, encoder: EncoderRNN, decoder: DecoderRNN, teacher_forcing_ratio=1.0):
+    def __init__(self, encoder: EncoderRNN, decoder: DecoderRNN):
         super(Seq2SeqRNN, self).__init__()
+        self.encoder = encoder
+        self.decoder = decoder
+
+    def call(self, inputs, training=False):
+        enc_input, dec_input = inputs
+        # Encoding the input sequence to get input for decoder
+        enc_state = self.encoder(enc_input,
+                                 training=training)
+        # Decoder returning predicted target sequences
+        dec_output, _ = self.decoder(dec_input,
+                                     enc_state,
+                                     training=training)
+
+        return dec_output
+
+class Seq2SeqRNN_manual(Model):
+    def __init__(self, encoder: EncoderRNN, decoder: DecoderRNN, teacher_forcing_ratio=1.0):
+        super(Seq2SeqRNN_manual, self).__init__()
         self.encoder = encoder
         self.decoder = decoder
         self.teacher_forcing_ratio = teacher_forcing_ratio
